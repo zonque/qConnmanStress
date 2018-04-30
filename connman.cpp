@@ -47,8 +47,22 @@ void Connman::iterateServices()
 
         qInfo(ConnmanLog) << "Current state of SSID" << preconfiguredSSID << "is" << service->state();
 
+        if (service->state() != lastState) {
+            lastState = service->state();
+            stuckCount = 0;
+        } else
+            stuckCount++;
+
+        if (stuckCount > 5) {
+            qInfo(ConnmanLog) << "Service" << service->name() << "is stuck, disconnecting.";
+            service->requestDisconnect();
+            scanWifi();
+            return;
+        }
+
         if (service->state() == "online") {
             successCount++;
+            stuckCount = 0;
             qInfo(ConnmanLog) << "Successfully connected" << successCount << "times";
             service->requestDisconnect();
             scanWifi();
@@ -63,6 +77,7 @@ void Connman::iterateServices()
         }
 
         if (service->state() == "idle") {
+            stuckCount = 0;
             service->requestConnect();
             return;
         }
@@ -75,9 +90,17 @@ Connman::Connman(const QString &ssid, const QString &pw, QObject *parent) :
     manager = new NetworkManager(this);
     preconfiguredPassword = pw;
     preconfiguredSSID = ssid;
+    lastState = "";
 
     successCount = 0;
     failureCount = 0;
+    stuckCount = 0;
+
+    timer = new QTimer(this);
+
+    QObject::connect(timer, &QTimer::timeout, this, &Connman::iterateServices);
+    timer->setSingleShot(false);
+    timer->start(2000);
 
     QObject::connect(manager, &NetworkManager::stateChanged, [this]() {
         if (manager->state() == "offline") {

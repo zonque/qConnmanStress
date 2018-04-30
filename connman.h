@@ -13,18 +13,17 @@ class Connman : public QObject
 public:
     explicit Connman(const QString &ssid, const QString &pw, QObject *parent);
 
-signals:
-
-public slots:
-
 private:
     NetworkManager *manager;
     UserAgent *agent;
     QString preconfiguredSSID;
     QString preconfiguredPassword;
+    QString lastState;
+    QTimer *timer;
 
     int successCount;
     int failureCount;
+    int stuckCount;
 
     void enableWifi();
     void iterateServices();
