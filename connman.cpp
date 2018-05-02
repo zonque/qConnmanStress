@@ -84,27 +84,61 @@ void Connman::iterateServices()
     }
 }
 
+int Connman::timeoutForRandomEvent()
+{
+    return 3000 + (qrand() % 10000);
+}
+
 Connman::Connman(const QString &ssid,
-                 const QString &pw,
+                 const QString &_preconfiguredPassword,
+                 const QStringList &_randomEvents,
                  int _stuckTimeout,
                  QObject *parent) :
     QObject(parent)
 {
     manager = new NetworkManager(this);
-    preconfiguredPassword = pw;
+    preconfiguredPassword = _preconfiguredPassword;
     preconfiguredSSID = ssid;
     lastState = "";
     stuckTimeout = _stuckTimeout;
+    randomEvents = _randomEvents;
 
     successCount = 0;
     failureCount = 0;
     stuckCount = 0;
 
-    timer = new QTimer(this);
+    stuckTimer = new QTimer(this);
+    QObject::connect(stuckTimer, &QTimer::timeout, this, &Connman::iterateServices);
+    stuckTimer->setSingleShot(false);
+    stuckTimer->start(2000);
 
-    QObject::connect(timer, &QTimer::timeout, this, &Connman::iterateServices);
-    timer->setSingleShot(false);
-    timer->start(2000);
+    if (randomEvents.contains("scan")) {
+        randomScanTimer = new QTimer(this);
+        QObject::connect(randomScanTimer, &QTimer::timeout, [this]() {
+            qInfo(ConnmanLog) << "Triggering random scan!";
+            scanWifi();
+            randomScanTimer->start(timeoutForRandomEvent());
+        });
+        randomScanTimer->setSingleShot(true);
+        randomScanTimer->start(timeoutForRandomEvent());
+    }
+
+    if (randomEvents.contains("disconnect")) {
+        randomDisconnectTimer = new QTimer(this);
+        QObject::connect(randomDisconnectTimer, &QTimer::timeout, [this]() {
+            foreach (NetworkService *service, manager->getServices("wifi")) {
+                if (service->name() == preconfiguredSSID) {
+                    qInfo(ConnmanLog) << "Triggering random disconnect!";
+                    service->requestDisconnect();
+                    break;
+                }
+            }
+
+            randomDisconnectTimer->start(timeoutForRandomEvent());
+        });
+        randomDisconnectTimer->setSingleShot(true);
+        randomDisconnectTimer->start(timeoutForRandomEvent());
+    }
 
     QObject::connect(manager, &NetworkManager::stateChanged, [this]() {
         if (manager->state() == "offline") {

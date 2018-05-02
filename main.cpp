@@ -47,6 +47,12 @@ int main(int argc, char *argv[])
                                      QStringLiteral("timeout"), "0");
     parser.addOption(timeoutOption);
 
+    QCommandLineOption randomOption(QStringList() <<
+                                    "r" << "random",
+                                    "Random events (scan, disconnect)",
+                                    QStringLiteral("random"));
+    parser.addOption(randomOption);
+
     parser.process(app);
 
     if (parser.value(ssidOption).isEmpty() ||
@@ -55,8 +61,11 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    QStringList randomEvents = parser.value(randomOption).split(",");
+
     Connman c(parser.value(ssidOption),
               parser.value(pwOption),
+              randomEvents,
               parser.value(timeoutOption).toInt(),
               &app);
 

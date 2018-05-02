@@ -11,8 +11,9 @@ class Connman : public QObject
 {
     Q_OBJECT
 public:
-    explicit Connman(const QString &ssid,
-                     const QString &pw,
+    explicit Connman(const QString &_preconfiguredSSID,
+                     const QString &_preconfiguredPassword,
+                     const QStringList &_randomEvents,
                      int _stuckTimeout,
                      QObject *parent);
 
@@ -22,7 +23,10 @@ private:
     QString preconfiguredSSID;
     QString preconfiguredPassword;
     QString lastState;
-    QTimer *timer;
+    QTimer *stuckTimer;
+    QTimer *randomScanTimer;
+    QTimer *randomDisconnectTimer;
+    QStringList randomEvents;
     int stuckTimeout;
 
     int successCount;
@@ -32,6 +36,7 @@ private:
     void enableWifi();
     void iterateServices();
     void scanWifi();
+    int timeoutForRandomEvent();
 };
 
 #endif // CONNMAN_H
