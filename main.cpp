@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
     QCommandLineParser parser;
 
-    parser.setApplicationDescription("Hardware abstraction layer for Nepos embedded devices");
+    parser.setApplicationDescription("Connman stress test");
     parser.addHelpOption();
 
     QCommandLineOption ssidOption(QStringList() <<
@@ -41,6 +41,12 @@ int main(int argc, char *argv[])
                                 QStringLiteral("pw"));
     parser.addOption(pwOption);
 
+    QCommandLineOption timeoutOption(QStringList() <<
+                                     "t" << "timeout",
+                                     "Timeout for stuck service state",
+                                     QStringLiteral("timeout"), "0");
+    parser.addOption(timeoutOption);
+
     parser.process(app);
 
     if (parser.value(ssidOption).isEmpty() ||
@@ -51,6 +57,7 @@ int main(int argc, char *argv[])
 
     Connman c(parser.value(ssidOption),
               parser.value(pwOption),
+              parser.value(timeoutOption).toInt(),
               &app);
 
     return app.exec();

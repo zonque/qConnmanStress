@@ -53,7 +53,7 @@ void Connman::iterateServices()
         } else
             stuckCount++;
 
-        if (stuckCount > 5) {
+        if (stuckTimeout != 0 && stuckCount > stuckTimeout) {
             qInfo(ConnmanLog) << "Service" << service->name() << "is stuck, disconnecting.";
             service->requestDisconnect();
             scanWifi();
@@ -84,13 +84,17 @@ void Connman::iterateServices()
     }
 }
 
-Connman::Connman(const QString &ssid, const QString &pw, QObject *parent) :
+Connman::Connman(const QString &ssid,
+                 const QString &pw,
+                 int _stuckTimeout,
+                 QObject *parent) :
     QObject(parent)
 {
     manager = new NetworkManager(this);
     preconfiguredPassword = pw;
     preconfiguredSSID = ssid;
     lastState = "";
+    stuckTimeout = _stuckTimeout;
 
     successCount = 0;
     failureCount = 0;

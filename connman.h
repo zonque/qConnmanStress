@@ -11,7 +11,10 @@ class Connman : public QObject
 {
     Q_OBJECT
 public:
-    explicit Connman(const QString &ssid, const QString &pw, QObject *parent);
+    explicit Connman(const QString &ssid,
+                     const QString &pw,
+                     int _stuckTimeout,
+                     QObject *parent);
 
 private:
     NetworkManager *manager;
@@ -20,6 +23,7 @@ private:
     QString preconfiguredPassword;
     QString lastState;
     QTimer *timer;
+    int stuckTimeout;
 
     int successCount;
     int failureCount;
